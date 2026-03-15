@@ -23,7 +23,6 @@ import jakarta.persistence.Table;
 import lombok.Builder;
 import lombok.Data;
 
-
 @Data
 @Builder
 
@@ -57,7 +56,7 @@ public class ResourceRequest {
 
 	@ManyToOne(optional = false, fetch = FetchType.LAZY)
 
-	@JoinColumn(name = "RequesterUserID", referencedColumnName="userId",nullable = false,
+	@JoinColumn(name = "RequesterUserID", referencedColumnName = "userId", nullable = false,
 
 			foreignKey = @ForeignKey(name = "fk_rr_requester_user"))
 
