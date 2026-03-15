@@ -48,5 +48,5 @@ public class Program {
  
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id",referencedColumnName = "userId", updatable = false)
-    private User user;
+    private User createdByAdmin;
 }

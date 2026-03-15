@@ -41,5 +41,5 @@ public class Enrollment {
  
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by_admin_id",referencedColumnName="userId")
-    private User user;
+    private User approvedByAdmin;
 }
