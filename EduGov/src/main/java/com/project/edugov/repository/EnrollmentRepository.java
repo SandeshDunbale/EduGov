@@ -11,13 +11,13 @@ import java.util.List;
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
-    // Requirement: Fetch all "PENDING" requests for the Admin
     List<Enrollment> findByStatus(Status status);
 
-    // Requirement: Get unique Student IDs based on status (ACTIVE/REJECTED)
     @Query("SELECT DISTINCT e.student.studentId FROM Enrollment e WHERE e.status = :status")
     List<Long> findStudentIdsByStatus(@Param("status") Status status);
     
-    // Requirement: Get a specific student's enrollment history
     List<Enrollment> findByStudent_StudentId(Long studentId);
+
+    // FIXED: Changed CourseId to CourseID to match your Model variable
+    boolean existsByStudent_StudentIdAndCourse_CourseID(Long studentId, Long courseID);
 }
