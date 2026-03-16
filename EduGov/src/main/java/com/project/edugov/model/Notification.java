@@ -68,4 +68,88 @@ public class Notification {
  
 
     private LocalDateTime createdDate;
+
+
+
+	public Long getNotificationID() {
+		return notificationID;
+	}
+
+
+
+	public void setNotificationID(Long notificationID) {
+		this.notificationID = notificationID;
+	}
+
+
+
+	public User getRecipient() {
+		return recipient;
+	}
+
+
+
+	public void setRecipient(User recipient) {
+		this.recipient = recipient;
+	}
+
+
+
+	public Long getEntityID() {
+		return entityID;
+	}
+
+
+
+	public void setEntityID(Long entityID) {
+		this.entityID = entityID;
+	}
+
+
+
+	public String getMessage() {
+		return message;
+	}
+
+
+
+	public void setMessage(String message) {
+		this.message = message;
+	}
+
+
+
+	public NotificationCategory getCategory() {
+		return category;
+	}
+
+
+
+	public void setCategory(NotificationCategory category) {
+		this.category = category;
+	}
+
+
+
+	public String getStatus() {
+		return status;
+	}
+
+
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+
+
+	public LocalDateTime getCreatedDate() {
+		return createdDate;
+	}
+
+
+
+	public void setCreatedDate(LocalDateTime createdDate) {
+		this.createdDate = createdDate;
+	}
 }
