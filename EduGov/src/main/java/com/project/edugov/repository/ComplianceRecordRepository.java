@@ -34,7 +34,4 @@ public interface ComplianceRecordRepository extends JpaRepository<ComplianceReco
 	List<ComplianceRecord> findByEntityIdAndResult(Long entityId, String result);
 
 	
-	
-	
-	
 }
