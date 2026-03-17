@@ -1,10 +1,14 @@
 package com.project.edugov.service;
 
+
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.project.edugov.dto.ProjectUpdateResponseDTO;
+import com.project.edugov.dto.ResearchProjectDTO;
+import com.project.edugov.exception.ResourceNotFoundException;
 import com.project.edugov.model.Faculty;
 import com.project.edugov.model.ProjectStatus;
 import com.project.edugov.model.ResearchProject;
@@ -14,49 +18,54 @@ import com.project.edugov.repository.ResearchProjectRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor 
+@RequiredArgsConstructor // Automatically injects the repositories
 public class ResearchProjectServiceImpl implements ResearchProjectService {
 
     private final ResearchProjectRepository projectRepository;
     private final FacultyRepository facultyRepository;
+    private final org.modelmapper.ModelMapper modelMapper;
 
     @Override
     @Transactional
-    public ResearchProject createProject(ResearchProject project, Long facultyId) {
-       
+    public ResearchProjectDTO createProject(ResearchProject project, Long facultyId) {
         Faculty faculty = facultyRepository.findById(facultyId)
-                .orElseThrow(() -> new RuntimeException("Faculty not found with ID: " + facultyId));
+                .orElseThrow(() -> new ResourceNotFoundException("Faculty not found with ID: " + facultyId));
 
-       
         if (projectRepository.existsByTitleAndFaculty_FacultyId(project.getTitle(), facultyId)) {
             throw new RuntimeException("A project with this title already exists for this faculty.");
         }
 
-       
         project.setFaculty(faculty);
-
-      
         project.setStatus(ProjectStatus.DRAFT);
-     
-        return projectRepository.save(project);
+        
+        ResearchProject savedProject = projectRepository.save(project);
+
+        // Map the saved Entity to the DTO
+        return modelMapper.map(savedProject, ResearchProjectDTO.class);
     }
 
     @Override
-    public List<ResearchProject> getProjectsByFaculty(Long facultyId) {
+    public List<ResearchProjectDTO> getProjectsByFaculty(Long facultyId) {
         List<ResearchProject> projects = projectRepository.findByFaculty_FacultyId(facultyId);
         
-        // Check if the list is empty manually
         if (projects.isEmpty()) {
             throw new RuntimeException("No projects found for Faculty ID: " + facultyId);
         }
-        
-        return projects;
+
+        // Map each Entity in the list to a DTO
+        return projects.stream()
+                .map(project -> modelMapper.map(project, ResearchProjectDTO.class))
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
-    public ResearchProject getProjectById(Long projectId) {
-        return projectRepository.findById(projectId)
+    public ResearchProjectDTO getProjectById(Long projectId) {
+        // 1. Fetch the Entity from the DB
+        ResearchProject project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with ID: " + projectId));
+        
+        // 2. Map the Entity to the DTO and return it
+        return modelMapper.map(project, ResearchProjectDTO.class);
     }
 
     @Override
@@ -67,16 +76,23 @@ public class ResearchProjectServiceImpl implements ResearchProjectService {
     @Override
     @Transactional
     public ResearchProject updateProjectStatus(Long projectId, ProjectStatus newStatus) {
-        ResearchProject project = getProjectById(projectId);
+        // 1. Fetch the ENTITY directly from the repository
+        ResearchProject project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found with ID: " + projectId));
+
+        // 2. Perform the update
         project.setStatus(newStatus);
+
+        // 3. Save and return the ENTITY
         return projectRepository.save(project);
     }
 
     @Override
     @Transactional
-    public ResearchProject updateProject(Long projectId, ResearchProject details) {
-        // 1. Fetch the existing project
-        ResearchProject existingProject = getProjectById(projectId);
+    public ProjectUpdateResponseDTO updateProject(Long projectId, ResearchProject details) {
+        // 1. Fetch the ENTITY directly from the repository (Fixes the Type Mismatch)
+        ResearchProject existingProject = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
 
         // 2. Update the fields
         existingProject.setTitle(details.getTitle());
@@ -84,9 +100,13 @@ public class ResearchProjectServiceImpl implements ResearchProjectService {
         existingProject.setStartDate(details.getStartDate());
         existingProject.setEndDate(details.getEndDate());
 
-        // Note: We usually DON'T update Faculty or Status here 
-        // because those are handled by separate business logic.
+        // 3. Keep the status as DRAFT as per your logic
         existingProject.setStatus(ProjectStatus.DRAFT);
-        return projectRepository.save(existingProject);
+
+        // 4. Save the Entity
+        ResearchProject updated = projectRepository.save(existingProject);
+
+        // 5. Convert the saved Entity to the Update DTO (This hides dates and status from the response)
+        return modelMapper.map(updated, ProjectUpdateResponseDTO.class);
     }
 }
