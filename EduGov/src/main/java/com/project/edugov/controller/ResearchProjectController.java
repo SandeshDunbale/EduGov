@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.edugov.dto.ProjectUpdateResponseDTO;
+import com.project.edugov.dto.ResearchProjectDTO;
 import com.project.edugov.model.ResearchProject;
 import com.project.edugov.service.ResearchProjectService;
 
@@ -27,30 +29,30 @@ public class ResearchProjectController {
 
     @PostMapping("/{facultyId}")
    // @PreAuthorize(hasRole="")   for only access to faculty
-    public ResponseEntity<ResearchProject> createProject(
+    public ResponseEntity<ResearchProjectDTO> createProject(
             @Valid @RequestBody ResearchProject project, 
             @PathVariable Long facultyId) {
         
-        ResearchProject createdProject = projectService.createProject(project, facultyId);
+    	ResearchProjectDTO createdProject = projectService.createProject(project, facultyId);
         return new ResponseEntity<>(createdProject, HttpStatus.CREATED);
     }
 
     @GetMapping("/faculty/{facultyId}")
-    public ResponseEntity<List<ResearchProject>> getProjectsByFaculty(@PathVariable Long facultyId) {
+    public ResponseEntity<List<ResearchProjectDTO>> getProjectsByFaculty(@PathVariable Long facultyId) {
         return ResponseEntity.ok(projectService.getProjectsByFaculty(facultyId));
     }
 
     @GetMapping("/{projectId}")
-    public ResponseEntity<ResearchProject> getProjectById(@PathVariable Long projectId) {
+    public ResponseEntity<ResearchProjectDTO> getProjectById(@PathVariable Long projectId) {
         return ResponseEntity.ok(projectService.getProjectById(projectId));
     }
 
     @PutMapping("/{projectId}")
-    public ResponseEntity<ResearchProject> updateProject(
+    public ResponseEntity<ProjectUpdateResponseDTO> updateProject(
             @PathVariable Long projectId, 
             @Valid @RequestBody ResearchProject projectDetails) {
         
-        ResearchProject updatedProject = projectService.updateProject(projectId, projectDetails);
+    	ProjectUpdateResponseDTO updatedProject = projectService.updateProject(projectId, projectDetails);
         return ResponseEntity.ok(updatedProject);
     }
 }
