@@ -1,86 +1,47 @@
-package com.project.edugov.model;
+package com.project.edugov.dto;
 
 import java.time.LocalDate;
-
-import jakarta.persistence.*;
 import lombok.*;
 
-@Entity
-@Table(name= "audit")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Audit{
-	@Id
-	@GeneratedValue(strategy= GenerationType.IDENTITY)
-	private Long auditId;
+
+public class AuditDTO {
 	private String scope;
 	private String findings;
 	private String status;
 	private LocalDate date;
-
-	
-	@ManyToOne
-	@JoinColumn(name = "officer_id")
-	private User officer;
-
-
-	public Long getAuditId() {
-		return auditId;
-	}
-
-
-	public void setAuditId(Long auditId) {
-		this.auditId = auditId;
-	}
-
-
+	private Long officerId;
 	public String getScope() {
 		return scope;
 	}
-
-
 	public void setScope(String scope) {
 		this.scope = scope;
 	}
-
-
 	public String getFindings() {
 		return findings;
 	}
-
-
 	public void setFindings(String findings) {
 		this.findings = findings;
 	}
-
-
 	public String getStatus() {
 		return status;
 	}
-
-
 	public void setStatus(String status) {
 		this.status = status;
 	}
-
-
 	public LocalDate getDate() {
 		return date;
 	}
-
-
 	public void setDate(LocalDate date) {
 		this.date = date;
 	}
-
-
-	public User getOfficer() {
-		return officer;
+	public Long getOfficerId() {
+		return officerId;
 	}
-
-
-	public void setOfficer(User officer) {
-		this.officer = officer;
+	public void setOfficerId(Long officerId) {
+		this.officerId = officerId;
 	}
+	
 }

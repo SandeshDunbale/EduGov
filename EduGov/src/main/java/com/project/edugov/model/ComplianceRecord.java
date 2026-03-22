@@ -2,49 +2,89 @@ package com.project.edugov.model;
 
 import java.time.LocalDate;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
+import jakarta.persistence.*;
+import lombok.*;
 
-@Data
 @Entity
-@Table(name = "compliance_record")
+@Table(name= "compliance_record")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ComplianceRecord {
- 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long complianceId;
- 
-    @NotNull(message = "Entity ID is required")
-    private Long entityId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long complianceId;
+	
+	private Long entityId;
+	
+	private String entityType;
+	
+	private String result;
+	
+	private LocalDate date;
+	
+	private String notes;
 
-    @NotBlank(message = "Entity type (e.g., SCHOOL, NGO) is required")
-    private String entityType;
+	@ManyToOne
+	@JoinColumn(name = "officer_id", nullable = true)
+	private User officer;
 
-    @NotBlank(message = "Compliance result is required")
-    @Size(max = 50, message = "Result status must be under 50 characters")
-    private ComplianceRecordStatus result=ComplianceRecordStatus.UNDER_REVIEW; // e.g., PASSED, FAILED, UNDER_REVIEW
+	public Long getComplianceId() {
+		return complianceId;
+	}
 
-    @NotNull(message = "Inspection date is required")
-    @PastOrPresent(message = "Compliance date cannot be in the future")
-    private LocalDate date;
+	public void setComplianceId(Long complianceId) {
+		this.complianceId = complianceId;
+	}
 
-    @Size(max = 1000, message = "Notes cannot exceed 1000 characters")
-    @Column(columnDefinition = "TEXT")
-    private String notes;
- 
-    @NotNull(message = "An inspecting officer must be assigned")
-    @ManyToOne
-    @JoinColumn(name = "officer_id", nullable = false)
-    private User officer;
+	public Long getEntityId() {
+		return entityId;
+	}
+
+	public void setEntityId(Long entityId) {
+		this.entityId = entityId;
+	}
+
+	public String getEntityType() {
+		return entityType;
+	}
+
+	public void setEntityType(String entityType) {
+		this.entityType = entityType;
+	}
+
+	public String getResult() {
+		return result;
+	}
+
+	public void setResult(String result) {
+		this.result = result;
+	}
+
+	public LocalDate getDate() {
+		return date;
+	}
+
+	public void setDate(LocalDate date) {
+		this.date = date;
+	}
+
+	public String getNotes() {
+		return notes;
+	}
+
+	public void setNotes(String notes) {
+		this.notes = notes;
+	}
+
+	public User getOfficer() {
+		return officer;
+	}
+
+	public void setOfficer(User officer) {
+		this.officer = officer;
+	}
+
 }
+	
