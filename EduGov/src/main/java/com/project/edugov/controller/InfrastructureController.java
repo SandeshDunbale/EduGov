@@ -1,70 +1,143 @@
 package com.project.edugov.controller;
 
-import static com.project.edugov.dto.DtoMappers.toDto;
+import java.util.List;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.project.edugov.dto.DtoMappers;
 import com.project.edugov.dto.InfrastructureCreateRequest;
 import com.project.edugov.dto.InfrastructureResponse;
 import com.project.edugov.dto.InfrastructureStatusUpdateRequest;
-import com.project.edugov.model.Program;
+import com.project.edugov.dto.InfrastructureUpdateRequest;
 import com.project.edugov.service.InfrastructureService;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/infrastructure")
 public class InfrastructureController {
 
     private final InfrastructureService infraService;
+    private final ModelMapper mapper;
 
-    public InfrastructureController(InfrastructureService infraService) {
+    public InfrastructureController(InfrastructureService infraService, ModelMapper mapper) {
         this.infraService = infraService;
+        this.mapper = mapper;
+        log.info("InfrastructureController initialized");
     }
 
-    /** Create Infrastructure for a Program */
+    // ---------------------------------------------
+    // CREATE INFRASTRUCTURE
+    // ---------------------------------------------
     @PostMapping
-    public ResponseEntity<InfrastructureResponse> create(@Valid @RequestBody InfrastructureCreateRequest req) {
-        var saved = infraService.create(req.programId(), req.type(), req.location(), req.capacity(), req.status());
-        return ResponseEntity.status(HttpStatus.CREATED).body(toDto(saved));
+    public ResponseEntity<InfrastructureResponse> create(
+            @Valid @RequestBody InfrastructureCreateRequest req) {
+
+        log.info("API CALL: Create Infrastructure → programId={}, type={}, location={}",
+                 req.programId(), req.type(), req.location());
+
+        var saved = infraService.create(
+                req.programId(),
+                req.type(),
+                req.location(),
+                req.capacity(),
+                req.status()
+        );
+
+        log.debug("Infrastructure created successfully → infraId={}", saved.getInfraId());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mapper.map(saved, InfrastructureResponse.class));
     }
 
-    /** Get Infrastructure by id */
+    // ---------------------------------------------
+    // GET INFRASTRUCTURE BY ID
+    // ---------------------------------------------
     @GetMapping("/{id}")
     public InfrastructureResponse get(@PathVariable Long id) {
-        return toDto(infraService.getById(id));
+        log.info("API CALL: Get Infrastructure by ID → {}", id);
+
+        var infra = infraService.getById(id);
+        log.debug("Fetched infrastructure → {}", infra.getInfraId());
+
+        return mapper.map(infra, InfrastructureResponse.class);
     }
 
-    /** List Infrastructure by Program (paged) */
-    @GetMapping
-    public Page<InfrastructureResponse> listByProgram(@RequestParam Long programId, Pageable pageable) {
-        var program = new Program();
-        program.setProgramID(programId); // NOTE: your Program uses field 'programID' (capital D)
-        return infraService.findByProgram(program, pageable).map(DtoMappers::toDto);
+    // ---------------------------------------------
+    // GET ALL INFRASTRUCTURE
+    // ---------------------------------------------
+    @GetMapping("/all")
+    public List<InfrastructureResponse> getAll() {
+        log.info("API CALL: Fetch ALL Infrastructure");
+
+        var list = infraService.findAll();
+        log.debug("Total infrastructure count={}", list.size());
+
+        return list.stream()
+                .map(i -> mapper.map(i, InfrastructureResponse.class))
+                .toList();
     }
 
-    /** Update status (AVAILABLE / IN_USE / MAINTENANCE / RETIRED) */
+    // ---------------------------------------------
+    // UPDATE INFRASTRUCTURE STATUS
+    // ---------------------------------------------
     @PatchMapping("/{id}/status")
-    public InfrastructureResponse updateStatus(@PathVariable Long id,
-                                               @Valid @RequestBody InfrastructureStatusUpdateRequest req) {
-        return toDto(infraService.updateStatus(id, req.status()));
+    public InfrastructureResponse updateStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody InfrastructureStatusUpdateRequest req) {
+
+        log.info("API CALL: Update Infrastructure Status → id={}, newStatus={}",
+                 id, req.status());
+
+        var updated = infraService.updateStatus(id, req.status());
+
+        log.debug("Infrastructure status updated → id={}, status={}",
+                  updated.getInfraId(), updated.getStatus());
+
+        return mapper.map(updated, InfrastructureResponse.class);
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<InfrastructureResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody InfrastructureUpdateRequest req) {
+
+        log.info("API CALL: Update Infrastructure Details → id={}", id);
+
+        var updated = infraService.update(
+                id,
+                req.programId(),
+                req.type(),
+                req.location(),
+                req.capacity(),
+                req.status()
+        );
+
+        return ResponseEntity.ok(mapper.map(updated, InfrastructureResponse.class));
     }
 
-    /** Mark infrastructure IN_USE (e.g., upon approval of a booking/request) */
-    @PostMapping("/{id}/use")
-    public InfrastructureResponse markInUse(@PathVariable Long id) {
-        return toDto(infraService.markInUse(id));
+    // ---------------------------------------------
+    // DELETE INFRASTRUCTURE
+    // ---------------------------------------------
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        log.warn("API CALL: Delete Infrastructure → id={}", id);
+
+        infraService.delete(id);
+
+        log.info("Infrastructure deleted successfully → id={}", id);
+
+        return ResponseEntity.noContent().build();
     }
 }

@@ -14,18 +14,15 @@ import java.util.List;
 @Repository
 public interface InfrastructureRepository extends JpaRepository<Infrastructure, Long>, JpaSpecificationExecutor<Infrastructure> {
 
-    // Basic lookups
+    
     List<Infrastructure> findByProgram(Program program);
     List<Infrastructure> findByStatus(InfrastructureStatus status);
     List<Infrastructure> findByType(InfrastructureType type);
-
-    // Combined filters
+    List<Infrastructure> findByProgram_ProgramID(Long programId);
+    
     List<Infrastructure> findByProgramAndType(Program program, InfrastructureType type);
     List<Infrastructure> findByProgramAndStatus(Program program, InfrastructureStatus status);
 
-    // Paging for admin view
-    Page<Infrastructure> findByProgram(Program program, Pageable pageable);
-
-    // Capacity‑based filters (handy for room selection UIs)
+    
     List<Infrastructure> findByTypeAndCapacityGreaterThanEqual(InfrastructureType type, Integer minCapacity);
 }

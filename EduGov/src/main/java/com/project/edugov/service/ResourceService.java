@@ -1,4 +1,4 @@
-// src/com.project.edugov/service/ResourceService.java
+
 package com.project.edugov.service;
 
 import com.project.edugov.model.Program;
@@ -18,9 +18,14 @@ public interface ResourceService {
 
     List<Resource> findByProgram(Program program);
 
-    Page<Resource> findByStatus(ResourceStatus status, Pageable pageable);
+    List<Resource> findByStatus(ResourceStatus status);
 
     Resource updateStatus(Long resourceId, ResourceStatus status);
+    Resource update(Long id, Long programId, ResourceType type, Integer qty, ResourceStatus status);
 
     Resource allocate(Long resourceId, int qtyToAllocate); // decrements quantity (if not null) and sets status to ALLOCATED
+    
+    List<Resource> findAll();
+    
+    void delete(Long resourceId);
 }

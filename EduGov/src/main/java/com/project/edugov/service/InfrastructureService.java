@@ -1,4 +1,3 @@
-// src/com.project.edugov/service/InfrastructureService.java
 package com.project.edugov.service;
 
 import java.util.List;
@@ -13,15 +12,23 @@ import com.project.edugov.model.Program;
 
 public interface InfrastructureService {
 
-    Infrastructure create(Long programId, InfrastructureType type, String location, Integer capacity, InfrastructureStatus status);
+	Infrastructure create(Long programId, InfrastructureType type, String location, Integer capacity,
+			InfrastructureStatus status);
 
-    Infrastructure getById(Long infraId);
+	Infrastructure getById(Long infraId);
 
-    List<Infrastructure> findByProgram(Program program);
+	List<Infrastructure> findByProgram(Program program);
+	
+	List<Infrastructure> findByProgramId(Long programId);
 
-    Page<Infrastructure> findByProgram(Program program, Pageable pageable);
+	Infrastructure updateStatus(Long infraId, InfrastructureStatus status);
+	Infrastructure update(Long id, Long programId, InfrastructureType type, String location,
+            Integer capacity, InfrastructureStatus status);
 
-    Infrastructure updateStatus(Long infraId, InfrastructureStatus status);
+	Infrastructure markInUse(Long infraId);
 
-    Infrastructure markInUse(Long infraId);
+	List<Infrastructure> findAll();
+	
+	void delete(Long infraId);
+
 }

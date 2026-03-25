@@ -8,6 +8,6 @@ import java.util.List;
 @Repository
 public interface ProgramRepository extends JpaRepository<Program, Long> {
 
-    // Requirement: Fuzzy/Partial Search (e.g., "Eng" finds "Engineering")
+    
     List<Program> findByTitleContainingIgnoreCase(String title);
 }
