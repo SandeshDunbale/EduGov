@@ -1,13 +1,15 @@
 package com.project.edugov.repository;
 
-import com.project.edugov.model.Program;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.List;
+
+import com.project.edugov.model.Program;
 
 @Repository
 public interface ProgramRepository extends JpaRepository<Program, Long> {
+	boolean existsByTitleIgnoreCase(String title);
 
-    // Requirement: Fuzzy/Partial Search (e.g., "Eng" finds "Engineering")
-    List<Program> findByTitleContainingIgnoreCase(String title);
+	List<Program> findByTitleContainingIgnoreCase(String title);
 }

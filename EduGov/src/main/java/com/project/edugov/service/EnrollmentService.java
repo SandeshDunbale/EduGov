@@ -1,12 +1,16 @@
 package com.project.edugov.service;
 
-import com.project.edugov.model.Enrollment;
-import com.project.edugov.model.Status;
 import java.util.List;
 
+import com.project.edugov.dto.EnrollmentResponseDTO;
+import com.project.edugov.model.Status;
+
 public interface EnrollmentService {
-    Enrollment applyForEnrollment(Long studentId, Long courseId);
-    Enrollment updateEnrollmentStatus(Long enrollmentId, Status status, Long adminId);
-    List<Enrollment> getPendingEnrollments();
-    List<Long> getStudentIdsByStatus(Status status); // Active/Rejected tracking
+	EnrollmentResponseDTO applyForCourse(Long studentId, Long courseId);
+
+	List<EnrollmentResponseDTO> getEnrollmentsByStatus(Status status);
+
+	EnrollmentResponseDTO updateEnrollmentStatus(Long enrollmentId, Long adminId, Status newStatus);
+
+	List<EnrollmentResponseDTO> getAllEnrollments();
 }

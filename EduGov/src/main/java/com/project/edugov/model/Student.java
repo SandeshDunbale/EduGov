@@ -13,7 +13,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-
+import lombok.Data;
+@Data
 @Entity
 @Table(
    name = "students",
@@ -25,7 +26,7 @@ public class Student {
    @GeneratedValue(strategy = GenerationType.IDENTITY)
    private Long studentId;
 
-   // 1:1 with users via unique FK
+  
    @OneToOne(fetch = FetchType.LAZY, optional = false)
    @JoinColumn(name = "user_id",referencedColumnName = "userId", nullable = false,
            foreignKey = @ForeignKey(name = "fk_student_user"))
@@ -40,6 +41,6 @@ public class Student {
    private String address;
 
    @Enumerated(EnumType.STRING)
-   private Status status = Status.PENDING; 
-   
+   private Status status = Status.PENDING;
+
 }

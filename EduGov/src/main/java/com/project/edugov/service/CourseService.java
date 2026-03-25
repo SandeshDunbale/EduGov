@@ -1,10 +1,23 @@
 package com.project.edugov.service;
 
-import com.project.edugov.model.Course;
 import java.util.List;
 
+import com.project.edugov.dto.CourseDTO;
+import com.project.edugov.dto.ProgramDTO;
+import com.project.edugov.model.Course;
+import com.project.edugov.model.Program;
+
 public interface CourseService {
-    Course addCourse(Course course, Long programId, Long facultyId, Long adminId);
-    List<Course> getCoursesByProgram(Long programId);
-    List<Course> getCoursesByFaculty(Long facultyId); // New requirement
+	CourseDTO createCourse(Course course, Long pId, Long fId, Long aId);
+
+	List<CourseDTO> getCoursesByFacultyId(Long facultyId);
+
+	List<CourseDTO> getCoursesByProgramId(Long programId);
+
+	CourseDTO getCourseById(Long courseId);
+
+	CourseDTO updateCourse(Long id, Course details);
+
+	List<CourseDTO> getAllCourses();
+
 }

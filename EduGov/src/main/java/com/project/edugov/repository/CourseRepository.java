@@ -1,16 +1,20 @@
 package com.project.edugov.repository;
 
-import com.project.edugov.model.Course;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.List;
+
+import com.project.edugov.model.Course;
 
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Long> {
+	boolean existsByTitleIgnoreCase(String title);
 
-    // Requirement: Get courses assigned to a specific Faculty ID
-    List<Course> findByFaculty_FacultyId(Long facultyId);
-    
-    // Requirement: Get all courses under a specific Program
-    List<Course> findByProgram_ProgramID(Long programId);
+	List<Course> findByFacultyFacultyId(Long facultyId);
+
+	List<Course> findByProgramProgramID(Long programId);
+
+	boolean existsByTitleIgnoreCaseAndProgram_ProgramID(String title, Long programId);
+
 }
