@@ -1,6 +1,5 @@
 package com.project.edugov.service;
 
-
 import java.util.List;
 
 import com.project.edugov.dto.ProjectUpdateResponseDTO;
@@ -12,13 +11,13 @@ public interface ResearchProjectService {
 
 	ResearchProjectDTO createProject(ResearchProject project, Long facultyId);
 
-    List<ResearchProjectDTO> getProjectsByFaculty(Long facultyId);
+	List<ResearchProjectDTO> getProjectsByFaculty(Long facultyId);
 
-    ResearchProjectDTO getProjectById(Long projectId);
+	ResearchProjectDTO getProjectById(Long projectId);
 
-    List<ResearchProject> getProjectsByStatus(ProjectStatus status);
+	List<ResearchProject> getProjectsByStatus(ProjectStatus status);
 
-    ResearchProject updateProjectStatus(Long projectId, ProjectStatus newStatus);
+	ResearchProject updateProjectStatus(Long projectId, ProjectStatus newStatus);
 
-    ProjectUpdateResponseDTO updateProject(Long projectId, ResearchProject projectDetails);
+	ProjectUpdateResponseDTO updateProject(Long projectId, ResearchProject projectDetails);
 }

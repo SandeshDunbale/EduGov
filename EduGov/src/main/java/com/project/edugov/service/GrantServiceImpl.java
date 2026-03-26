@@ -2,6 +2,7 @@ package com.project.edugov.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.project.edugov.dto.GrantApplicationDTO;
 import com.project.edugov.dto.GrantResponseDTO;
+import com.project.edugov.exception.ResourceNotFoundException;
 import com.project.edugov.model.Grant;
 import com.project.edugov.model.GrantApplication;
 import com.project.edugov.model.GrantApplicationStatus;
@@ -23,94 +25,158 @@ import com.project.edugov.repository.ResearchProjectRepository;
 import com.project.edugov.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GrantServiceImpl implements GrantService {
 
-    private final GrantApplicationRepository applicationRepository;
-    private final GrantRepository grantRepository;
-    private final ResearchProjectRepository projectRepository;
-    private final UserRepository userRepository;
-    private final ModelMapper modelMapper; // Injected for DTO conversion
+	private final GrantApplicationRepository applicationRepository;
+	private final GrantRepository grantRepository;
+	private final ResearchProjectRepository projectRepository;
+	private final UserRepository userRepository;
+	private final ModelMapper modelMapper;
 
-    @Override
-    @Transactional
-    public GrantApplicationDTO applyForGrant(GrantApplication application, Long projectId, Long facultyId) {
-        // Prevent duplicate applications
-        applicationRepository.findByProject_ProjectId(projectId).ifPresent(a -> {
-            throw new RuntimeException("An application already exists for this project.");
-        });
+	@Override
+	@Transactional
+	public GrantApplicationDTO applyForGrant(GrantApplication newDetails, Long projectId, Long facultyId) {
+		log.info("Received grant application request for Project ID: {} from Faculty ID: {}", projectId, facultyId);
 
-        ResearchProject project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found."));
+		ResearchProject project = projectRepository.findById(projectId).orElseThrow(() -> {
+			log.error("Grant application failed: Project ID {} not found", projectId);
+			return new ResourceNotFoundException("Project not found with ID: " + projectId);
+		});
 
-        application.setProject(project);
-        application.setFaculty(project.getFaculty());
-        application.setStatus(GrantApplicationStatus.SUBMITTED);
-        application.setSubmittedDate(LocalDate.now());
+		Optional<GrantApplication> existingAppOpt = applicationRepository.findByProject_ProjectId(projectId);
 
-        GrantApplication savedApp = applicationRepository.save(application);
-        
-        // Return clean DTO
-        return modelMapper.map(savedApp, GrantApplicationDTO.class);
-    }
+		if (existingAppOpt.isPresent()) {
+			GrantApplication existingApp = existingAppOpt.get();
 
-    @Override
-    @Transactional
-    public GrantResponseDTO approveGrantApplication(Long applicationId, Long userId, GrantStatus decision) {
-        GrantApplication app = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new RuntimeException("Application not found."));
-        
-        User programManager = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User (Program Manager) not found."));
+			if (existingApp.getStatus() != GrantApplicationStatus.REJECTED) {
+				log.warn(
+						"Duplicate application blocked. Project ID {} already has an active application with status: {}",
+						projectId, existingApp.getStatus());
+				throw new RuntimeException("An active application already exists for this project (Status: "
+						+ existingApp.getStatus() + ")");
+			}
 
-        if (decision == GrantStatus.APPROVED) {
-            app.setStatus(GrantApplicationStatus.APPROVED);
-            
-            ResearchProject project = app.getProject();
-            project.setStatus(ProjectStatus.COMPLETED);
-            projectRepository.save(project);
+			log.info("Re-applying for rejected project. Reusing Application ID: {}", existingApp.getApplicationID());
+			existingApp.setRequestedAmount(newDetails.getRequestedAmount());
+			existingApp.setStatus(GrantApplicationStatus.SUBMITTED);
+			existingApp.setSubmittedDate(LocalDate.now());
 
-            Grant grant = new Grant();
-            grant.setProject(project);
-            grant.setFaculty(project.getFaculty());
-            grant.setAmount(app.getRequestedAmount());
-            grant.setDate(LocalDate.now());
-            grant.setStatus(GrantStatus.APPROVED);
-            grant.setApprovedBy(programManager);
+			GrantApplication updatedApp = applicationRepository.save(existingApp);
+			return modelMapper.map(updatedApp, GrantApplicationDTO.class);
+		}
 
-            applicationRepository.save(app);
-            Grant savedGrant = grantRepository.save(grant);
-            
-            // Return clean DTO with Manager's name mapped
-            return modelMapper.map(savedGrant, GrantResponseDTO.class);
-        } else {
-            throw new RuntimeException("Unsupported decision status: " + decision);
-        }
-    }
+		log.debug("Creating brand new grant application for Project ID: {}", projectId);
+		newDetails.setProject(project);
+		newDetails.setFaculty(project.getFaculty());
+		newDetails.setStatus(GrantApplicationStatus.SUBMITTED);
+		newDetails.setSubmittedDate(LocalDate.now());
 
-    @Override
-    public List<GrantApplicationDTO> getPendingApplications() {
-        return applicationRepository.findByStatus(GrantApplicationStatus.SUBMITTED)
-                .stream()
-                .map(app -> modelMapper.map(app, GrantApplicationDTO.class))
-                .collect(Collectors.toList());
-    }
+		GrantApplication savedApp = applicationRepository.save(newDetails);
+		log.info("Successfully saved new Grant Application with ID: {}", savedApp.getApplicationID());
+		return modelMapper.map(savedApp, GrantApplicationDTO.class);
+	}
 
-    @Override
-    public GrantResponseDTO getGrantByProjectId(Long projectId) {
-        Grant grant = grantRepository.findByProject_ProjectId(projectId)
-                .orElseThrow(() -> new RuntimeException("No grant found for this project."));
-        
-        return modelMapper.map(grant, GrantResponseDTO.class);
-    }
+	@Override
+	@Transactional
+	public GrantResponseDTO approveGrantApplication(Long applicationId, Long userId, GrantStatus decision) {
+		log.info("Manager (User ID: {}) is making a decision [{}] for Application ID: {}", userId, decision,
+				applicationId);
 
-    @Override
-    public List<GrantApplicationDTO> getApplicationHistoryByFaculty(Long facultyId) {
-        return applicationRepository.findByFaculty_FacultyId(facultyId)
-                .stream()
-                .map(app -> modelMapper.map(app, GrantApplicationDTO.class))
-                .collect(Collectors.toList());
-    }
+		GrantApplication app = applicationRepository.findById(applicationId).orElseThrow(() -> {
+			log.error("Decision failed: Application ID {} not found", applicationId);
+			return new ResourceNotFoundException("Application not found with ID: " + applicationId);
+		});
+
+		User programManager = userRepository.findById(userId).orElseThrow(() -> {
+			log.error("Decision failed: Program Manager ID {} not found", userId);
+			return new ResourceNotFoundException("Manager not found with ID: " + userId);
+		});
+
+		ResearchProject project = app.getProject();
+
+		if (decision == GrantStatus.UNDER_REVIEW) {
+			log.info("Moving Application {} and Project {} to UNDER_REVIEW", applicationId, project.getProjectId());
+			app.setStatus(GrantApplicationStatus.UNDER_REVIEW);
+			project.setStatus(ProjectStatus.UNDER_REVIEW);
+
+			projectRepository.save(project);
+			applicationRepository.save(app);
+			return modelMapper.map(app, GrantResponseDTO.class);
+		}
+
+		else if (decision == GrantStatus.APPROVED) {
+			log.info("Approving Grant for Application ID: {}. Finalizing project.", applicationId);
+			app.setStatus(GrantApplicationStatus.APPROVED);
+			project.setStatus(ProjectStatus.COMPLETED);
+			projectRepository.save(project);
+
+			Grant grant = grantRepository.findByProject_ProjectId(project.getProjectId()).orElse(new Grant());
+
+			grant.setProject(project);
+			grant.setFaculty(project.getFaculty());
+			grant.setAmount(app.getRequestedAmount());
+			grant.setDate(LocalDate.now());
+			grant.setStatus(GrantStatus.APPROVED);
+			grant.setApprovedBy(programManager);
+
+			applicationRepository.save(app);
+			Grant savedGrant = grantRepository.save(grant);
+			log.info("Grant record finalized with ID: {} for Project: {}", savedGrant.getGrantId(), project.getTitle());
+
+			return modelMapper.map(savedGrant, GrantResponseDTO.class);
+		}
+
+		else if (decision == GrantStatus.REJECTED) {
+			log.warn("Application ID: {} was REJECTED. Unlocking Project ID: {} for updates.", applicationId,
+					project.getProjectId());
+			app.setStatus(GrantApplicationStatus.REJECTED);
+			project.setStatus(ProjectStatus.DRAFT);
+
+			projectRepository.save(project);
+			applicationRepository.save(app);
+
+			GrantResponseDTO response = modelMapper.map(app, GrantResponseDTO.class);
+
+			// Manually set the role from the PM you already fetched
+			response.setApprovedByRole(programManager.getRole().toString());
+
+			// Return the updated DTO
+			return response;
+		}
+
+		else {
+			log.error("Invalid decision status received: {}", decision);
+			throw new RuntimeException("Unsupported decision status: " + decision);
+		}
+	}
+
+	@Override
+	public List<GrantApplicationDTO> getPendingApplications() {
+		log.debug("Fetching all pending grant applications");
+		return applicationRepository.findByStatus(GrantApplicationStatus.SUBMITTED).stream()
+				.map(app -> modelMapper.map(app, GrantApplicationDTO.class)).collect(Collectors.toList());
+	}
+
+	@Override
+	public GrantResponseDTO getGrantByProjectId(Long projectId) {
+		log.debug("Retrieving grant details for Project ID: {}", projectId);
+		Grant grant = grantRepository.findByProject_ProjectId(projectId).orElseThrow(() -> {
+			log.warn("No grant record found for Project ID: {}", projectId);
+			return new RuntimeException("No grant found for this project.");
+		});
+
+		return modelMapper.map(grant, GrantResponseDTO.class);
+	}
+
+	@Override
+	public List<GrantApplicationDTO> getApplicationHistoryByFaculty(Long facultyId) {
+		log.debug("Retrieving application history for Faculty ID: {}", facultyId);
+		return applicationRepository.findByFaculty_FacultyId(facultyId).stream()
+				.map(app -> modelMapper.map(app, GrantApplicationDTO.class)).collect(Collectors.toList());
+	}
 }
