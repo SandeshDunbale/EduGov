@@ -1,9 +1,11 @@
 package com.project.edugov.dto;
 
-import com.project.edugov.model.GrantStatus;
-import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import com.project.edugov.model.GrantStatus;
+
+import lombok.Data;
 
 @Data
 public class GrantResponseDTO {
@@ -12,6 +14,6 @@ public class GrantResponseDTO {
     private BigDecimal amount;
     private LocalDate date;
     private GrantStatus status;
-   // private String approvedByName; // Mapped from User.name of the approver
+   // private String approvedByName; 
     private String approvedByRole;
 }
