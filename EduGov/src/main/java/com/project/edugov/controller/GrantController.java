@@ -4,73 +4,95 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.project.edugov.dto.GrantApplicationDTO; // Import DTO
-import com.project.edugov.dto.GrantResponseDTO;    // Import DTO
+import com.project.edugov.dto.GrantApplicationDTO;
+import com.project.edugov.dto.GrantResponseDTO;
 import com.project.edugov.model.GrantApplication;
 import com.project.edugov.model.GrantStatus;
 import com.project.edugov.service.GrantService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/grants")
 @RequiredArgsConstructor
+@Slf4j
 public class GrantController {
 
-    private final GrantService grantService;
+	private final GrantService grantService;
 
-    /**
-     * Faculty applies for a grant. Returns clean Application DTO.
-     */
-    @PostMapping("/apply/{projectId}")
-    public ResponseEntity<GrantApplicationDTO> applyForGrant(
-            @Valid @RequestBody GrantApplication application,
-            @PathVariable Long projectId,
-            @RequestParam Long facultyId) {
-        
-        // Service now returns GrantApplicationDTO
-        GrantApplicationDTO submittedApp = grantService.applyForGrant(application, projectId, facultyId);
-        return new ResponseEntity<>(submittedApp, HttpStatus.CREATED);
-    }
+	@PostMapping("/apply/{projectId}")
+	public ResponseEntity<GrantApplicationDTO> applyForGrant(@Valid @RequestBody GrantApplication application,
+			@PathVariable Long projectId, @RequestParam Long facultyId) {
 
-    /**
-     * Program Manager views all pending applications as clean DTOs.
-     */
-    @GetMapping("/pending")
-    public ResponseEntity<List<GrantApplicationDTO>> getPendingApplications() {
-        return ResponseEntity.ok(grantService.getPendingApplications());
-    }
+		log.info("API Hit: POST /api/grants/apply/{} | Faculty ID: {}", projectId, facultyId);
 
-    /**
-     * Program Manager approves/rejects. Returns GrantResponseDTO with Manager name.
-     */
-    @PostMapping("/approve/{applicationId}")
-    public ResponseEntity<GrantResponseDTO> approveGrant(
-            @PathVariable Long applicationId,
-            @RequestParam Long userId,
-            @RequestParam GrantStatus decision) {
-        
-        // Service now returns GrantResponseDTO
-        GrantResponseDTO result = grantService.approveGrantApplication(applicationId, userId, decision);
-        return ResponseEntity.ok(result);
-    }
+		GrantApplicationDTO submittedApp = grantService.applyForGrant(application, projectId, facultyId);
 
-    /**
-     * Faculty views their history as a clean DTO list.
-     */
-    @GetMapping("/history/{facultyId}")
-    public ResponseEntity<List<GrantApplicationDTO>> getHistory(@PathVariable Long facultyId) {
-        return ResponseEntity.ok(grantService.getApplicationHistoryByFaculty(facultyId));
-    }
+		log.info("Successfully processed application. Project: {}, Application ID: {}", projectId,
+				submittedApp.getApplicationID());
 
-    /**
-     * Get final disbursement details. Returns clean GrantResponseDTO.
-     */
-    @GetMapping("/project/{projectId}")
-    public ResponseEntity<GrantResponseDTO> getGrantDetails(@PathVariable Long projectId) {
-        return ResponseEntity.ok(grantService.getGrantByProjectId(projectId));
-    }
+		return new ResponseEntity<>(submittedApp, HttpStatus.CREATED); // The empty < > is called the Diamond Operator.
+																		// Because you already defined the type at the
+																		// start of the method (public
+																		// ResponseEntity<GrantApplicationDTO>), Java is
+																		// smart enough to "infer" (guess) the type. You
+																		// don't have to type the long name twice!
+	}
+
+	@GetMapping("/pending")
+	public ResponseEntity<List<GrantApplicationDTO>> getPendingApplications() {
+		log.info("API Hit: GET /api/grants/pending");
+
+		List<GrantApplicationDTO> pending = grantService.getPendingApplications();
+		log.debug("Found {} pending applications in system", pending.size());
+
+		return ResponseEntity.ok(pending);
+	}
+
+	@PostMapping("/decision/{applicationId}")
+	public ResponseEntity<?> approveGrant(@PathVariable Long applicationId, @RequestParam Long userId,
+			@RequestParam GrantStatus decision) {
+
+		log.info("API Hit: POST /api/grants/decision/{} | Action: {} | Manager ID: {}", applicationId, decision,
+				userId);
+
+		GrantResponseDTO result = grantService.approveGrantApplication(applicationId, userId, decision);
+
+		// Rejection
+		if (decision == GrantStatus.REJECTED) {
+			log.warn("Manager {} REJECTED Application {}. Returning rejection guidance to Faculty.", userId,
+					applicationId);
+
+			java.util.Map<String, Object> response = new java.util.HashMap<>();
+			response.put("data", result);
+			response.put("message",
+					"Application Rejected. Your project has been set back to DRAFT. You can now update your project details and re-apply.");
+			return ResponseEntity.ok(response);
+		}
+
+		log.info("Decision [{}] for Application {} recorded successfully.", decision, applicationId);
+		return ResponseEntity.ok(result);
+	}
+
+	@GetMapping("/history/{facultyId}")
+	public ResponseEntity<List<GrantApplicationDTO>> getHistory(@PathVariable Long facultyId) {
+		log.info("API Hit: GET /api/grants/history/{} | Fetching faculty records", facultyId);
+		return ResponseEntity.ok(grantService.getApplicationHistoryByFaculty(facultyId));
+	}
+
+	@GetMapping("/project/{projectId}")
+	public ResponseEntity<GrantResponseDTO> getGrantDetails(@PathVariable Long projectId) {
+		log.info("API Hit: GET /api/grants/project/{} | Fetching grant details", projectId);
+		return ResponseEntity.ok(grantService.getGrantByProjectId(projectId));
+	}
 }
