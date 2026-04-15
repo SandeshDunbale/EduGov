@@ -1,45 +1,27 @@
 package com.project.edugov.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
 import java.time.LocalDate;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(
-   name = "students",
-   uniqueConstraints = @UniqueConstraint(name = "uq_student_user", columnNames = "user_id")
-)
+@Table(name = "students")
+@Data
 public class Student {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long studentId; // Auto-generated 1, 2, 3...
+     private String name;
+    private LocalDate dob;
+    private String gender;
+    private String address;
+    private String phone;
 
-   @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
-   private Long studentId;
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.PENDING;
 
-   // 1:1 with users via unique FK
-   @OneToOne(fetch = FetchType.LAZY, optional = false)
-   @JoinColumn(name = "user_id",referencedColumnName = "userId", nullable = false,
-           foreignKey = @ForeignKey(name = "fk_student_user"))
-   private User user;
-
-   private LocalDate dob;
-
-   @Column(length = 20)
-   private String gender;
-
-   @Column(length = 500)
-   private String address;
-
-   @Enumerated(EnumType.STRING)
-   private Status status = Status.PENDING; 
-   
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "user_id") 
+    // Foreign Key to Users table
+    private User user;
 }

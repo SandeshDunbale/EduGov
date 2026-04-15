@@ -9,7 +9,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -27,14 +26,10 @@ public class Report {
     @Column(nullable = false)
     private ReportScope scope;
 
-    // We use columnDefinition = "TEXT" to ensure the database 
-    // allocates enough space to store your JSON metrics payload.
+    // Allocates enough space to store your JSON metrics payload
     @Column(columnDefinition = "TEXT", nullable = false)
     private String metrics;
 
     @Column(name = "generated_date", nullable = false, updatable = false)
     private LocalDateTime generatedDate;
-
-    // Automatically stamps the exact time the report was generated
-   
 }
