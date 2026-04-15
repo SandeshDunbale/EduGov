@@ -63,7 +63,6 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<JwtAuthResponse> login(@RequestBody LoginRequest request) {
         logger.info("REST request to login user: {}", request.email());
-        
         User authenticatedUser = userService.authenticate(request.email(), request.password());
         String token = jwtUtil.generateToken(authenticatedUser.getEmail(), authenticatedUser.getRole().name());
         UserResponseDTO userDTO = mapToDTO(authenticatedUser);

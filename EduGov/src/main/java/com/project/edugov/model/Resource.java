@@ -13,17 +13,17 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
  
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "resource",
-       indexes = {
-           @Index(name = "idx_resource_program", columnList = "ProgramID"),
-           @Index(name = "idx_resource_status", columnList = "status")
-       })
+@Table(name = "resource")
 public class Resource {
  
     @Id
@@ -32,8 +32,7 @@ public class Resource {
     private Long resourceId;
  
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "ProgramID",referencedColumnName="programID", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_resource_program"))
+    @JoinColumn(name = "ProgramID",referencedColumnName="programID", nullable = false)
     private Program program;
  
     @Enumerated(EnumType.STRING)
@@ -41,7 +40,7 @@ public class Resource {
     private ResourceType type; // FUNDS/LAB/EQUIPMENT
  
     @Column(name = "quantity")
-    private Integer quantity;   // optional (for countable items)
+    private Integer quantity;   
  
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 16, nullable = false)

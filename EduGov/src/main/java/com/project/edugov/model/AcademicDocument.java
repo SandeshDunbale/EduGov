@@ -14,8 +14,16 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
+@Data
+@Builder
 @Table(
     name = "academic_documents",
     indexes = {
@@ -24,7 +32,7 @@ import jakarta.persistence.Table;
     }
 )
 public class AcademicDocument {
- 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long documentId;
@@ -40,8 +48,13 @@ public class AcademicDocument {
     private String docType;
  
     @Column(nullable = false, length = 1024)
-    private String fileUrl;
+    private String docNum;
  
+    
+    @Column(name = "file_url", nullable = false, length = 512)
+    private String fileUrl;
+    
+    
     // "PENDING" | "APPROVED" | "DECLINED"
     @Enumerated(EnumType.STRING)
     private Status verificationStatus = Status.PENDING; 
@@ -60,4 +73,6 @@ public class AcademicDocument {
  
     @Column(length = 1000)
     private String notes;
+    
+    
 }

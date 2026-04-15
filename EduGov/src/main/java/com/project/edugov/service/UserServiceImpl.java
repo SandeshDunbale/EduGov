@@ -25,10 +25,12 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    private final NotificationService notificationService;
+    
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,NotificationService notificationService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.notificationService=notificationService;
     }
 
     @Override
@@ -42,7 +44,7 @@ public class UserServiceImpl implements UserService {
                     return new ResourceNotFoundException("Invalid Email or Password"); 
                 });
 
-        if (user.getStatus() != Status.ACTIVE) {
+        if (user.getStatus() != Status.ACTIVE && user.getStatus()!=Status.APPROVE) {
             logger.warn("Authentication failed: User {} is currently {}", email, user.getStatus());
             // UPDATED
             throw new AccountNotActiveException("Account is Currently " + user.getStatus());
@@ -118,6 +120,13 @@ public class UserServiceImpl implements UserService {
         
         user.setPasswordHash(passwordEncoder.encode(newRawPassword));
         userRepository.save(user);
+        notificationService.createNotification(
+                user.getUserId(),                           // userId
+                user.getUserId(),                           // entityId (Using userId since this is a user-level event)
+                "Your password was successfully updated. If this wasn't you, please contact support immediately.", // message
+                "SECURITY",                             // category
+                user.getEmail()                         // email address to send to
+        );
         logger.info("Successfully updated password for user: {}", email);
     }
 }

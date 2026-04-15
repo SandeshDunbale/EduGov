@@ -31,8 +31,7 @@ public class ComplianceRecord {
     @NotBlank(message = "Entity type (e.g., SCHOOL, NGO) is required")
     private String entityType;
 
-    @NotBlank(message = "Compliance result is required")
-    @Size(max = 50, message = "Result status must be under 50 characters")
+    @NotNull(message = "Compliance result is required")
     private ComplianceRecordStatus result=ComplianceRecordStatus.UNDER_REVIEW; // e.g., PASSED, FAILED, UNDER_REVIEW
 
     @NotNull(message = "Inspection date is required")
